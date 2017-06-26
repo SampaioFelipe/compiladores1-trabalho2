@@ -1,9 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package CC1.T2;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -17,7 +15,17 @@ public class TestaAnalisadorSemantico {
     // testar. Utilize 0 para testar todos
     private final static int CASO_A_SER_TESTADO = 0;
 
+    // TODO: Trocar o caminho da sua máquina
+    private final static String CAMINHO_CASOS_TESTE = "/home/felipe/intelliJProjects/CC1-T1/casosDeTeste";
+
+
     public static void main(String[] args) throws Exception {
+        File diretorioCasosTeste = new File(CAMINHO_CASOS_TESTE + "/entrada");
+        File[] casosTeste = diretorioCasosTeste.listFiles();
+
+        File diretorioSaida = new File(CAMINHO_CASOS_TESTE + "/saida");
+        File[] casosTesteSaida = diretorioCasosTeste.listFiles();
+
         int min = 1, max = TOTAL_CASOS_TESTE;
         if (CASO_A_SER_TESTADO >= min && CASO_A_SER_TESTADO <= max) {
             min = CASO_A_SER_TESTADO;
@@ -29,13 +37,13 @@ public class TestaAnalisadorSemantico {
         for (int i = min; i <= max; i++) {
             Saida.clear();
             String nomeArquivo = String.format("casoDeTeste%02d.txt", i);
-            InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
-            ANTLRInputStream input = new ANTLRInputStream(casoDeTesteEntrada);
+//            InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
+            ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(casosTeste[i]));
             LuazinhaLexer lexer = new LuazinhaLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             LuazinhaParser parser = new LuazinhaParser(tokens);
             parser.programa();
-            InputStream casoDeTesteSaida = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/saida/" + nomeArquivo);
+            InputStream casoDeTesteSaida = new FileInputStream(casosTesteSaida[i]);
             comparar(nomeArquivo, casoDeTesteSaida, Saida.getTexto());
         }
     }

@@ -2,7 +2,7 @@ grammar Luazinha;
 
 
 @members{
-static String grupo = "<Coloque os RAs do seu grupo aqui>"; 
+static String grupo = "619523, 619744, 619655";
 PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
 }
 
