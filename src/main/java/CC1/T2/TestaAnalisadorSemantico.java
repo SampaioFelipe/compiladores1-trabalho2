@@ -16,7 +16,7 @@ public class TestaAnalisadorSemantico {
     private final static int CASO_A_SER_TESTADO = 0;
 
     // TODO: Trocar o caminho da sua máquina
-    private final static String CAMINHO_CASOS_TESTE = "/home/felipe/intelliJProjects/CC1-T1/casosDeTeste";
+    private final static String CAMINHO_CASOS_TESTE = "/home/felipe/intelliJProjects/CC1-T2/src/main/java/CC1/T2/casosDeTeste";
 
 
     public static void main(String[] args) throws Exception {
@@ -34,9 +34,10 @@ public class TestaAnalisadorSemantico {
         System.out.println("---------------- Grupo -----------------");
         System.out.println(LuazinhaParser.grupo);
         System.out.println("----------------------------------------");
-        for (int i = min; i <= max; i++) {
+        for (int i = 0; i < casosTeste.length; i++) {
             Saida.clear();
-            String nomeArquivo = String.format("casoDeTeste%02d.txt", i);
+            String nomeArquivo = casosTeste[i].getName();
+            System.out.println(casosTesteSaida[i].getName());
 //            InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
             ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(casosTeste[i]));
             LuazinhaLexer lexer = new LuazinhaLexer(input);
