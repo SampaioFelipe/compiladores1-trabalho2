@@ -24,10 +24,10 @@ comando :  listavar '=' listaexp
         |  'while' exp 'do' bloco 'end'
         |  'repeat' bloco 'until' exp
         |  'if' exp 'then' bloco ('elseif' exp 'then' bloco)* ('else' bloco)? 'end'
-        |  'for' NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'
-        |  'for' listadenomes 'in' listaexp 'do' bloco 'end'
-        |  'function' nomedafuncao corpodafuncao 
-        |  'local' 'function' NOME corpodafuncao 
+        |  'for' { pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for")); } NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'{ pilhaDeTabelas.desempilhar(); }
+        |  'for'{ pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for")); } listadenomes 'in' listaexp 'do' bloco 'end' { pilhaDeTabelas.desempilhar(); }
+        |  'function' nomedafuncao { pilhaDeTabelas.empilhar(new TabelaDeSimbolos($nomedafuncao.nome)); } corpodafuncao { pilhaDeTabelas.desempilhar(); }
+        |  'local' 'function' NOME { pilhaDeTabelas.empilhar(new TabelaDeSimbolos($NOME.getText())); } corpodafuncao { pilhaDeTabelas.desempilhar(); }
         |  'local' listadenomes ('=' listaexp)?
         ;
 
