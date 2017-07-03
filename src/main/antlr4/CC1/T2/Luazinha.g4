@@ -3,31 +3,36 @@ grammar Luazinha;
 
 @members{
 static String grupo = "619523, 619744, 619655";
-PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
 }
 
+NOME	:	('a'..'z' | 'A'..'Z' | '_') ('a'..'z' | 'A'..'Z' | '0'..'9' | '_')*;
+CADEIA	:	'\'' ~('\n' | '\r' | '\'')* '\'' | '"' ~('\n' | '\r' | '"')* '"';
+NUMERO	:	('0'..'9')+ EXPOENTE? | ('0'..'9')+ '.' ('0'..'9')* EXPOENTE?
+		| '.' ('0'..'9')+ EXPOENTE?;
+fragment
+EXPOENTE	:	('e' | 'E') ( '+' | '-')? ('0'..'9')+;
+COMENTARIO :	'--' ~('\n' | '\r')* '\r'? '\n' -> skip;
+WS	:	(' ' | '\t' | '\r' | '\n') -> skip;
 
-programa : { pilhaDeTabelas.empilhar(new TabelaDeSimbolos("global")); }
-           trecho
-           { pilhaDeTabelas.desempilhar(); }
+programa : trecho
          ;
 
-trecho : (comando ';'?)* (ultimocomando ';'?)?
+trecho : (comando ';'?)* (ultimocomando ';'?)? {System.out.println("entrou trecho");}
        ;
 
 bloco : trecho
       ;
 
-comando :  listavar '=' listaexp 
+comando :  listavar '=' listaexp {System.out.println("entrou listvar");}
         |  chamadadefuncao
         |  'do' bloco 'end'
         |  'while' exp 'do' bloco 'end'
         |  'repeat' bloco 'until' exp
         |  'if' exp 'then' bloco ('elseif' exp 'then' bloco)* ('else' bloco)? 'end'
-        |  'for' { pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for")); } NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'{ pilhaDeTabelas.desempilhar(); }
-        |  'for'{ pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for")); } listadenomes 'in' listaexp 'do' bloco 'end' { pilhaDeTabelas.desempilhar(); }
-        |  'function' nomedafuncao { pilhaDeTabelas.empilhar(new TabelaDeSimbolos($nomedafuncao.nome)); } corpodafuncao { pilhaDeTabelas.desempilhar(); }
-        |  'local' 'function' NOME { pilhaDeTabelas.empilhar(new TabelaDeSimbolos($NOME.getText())); } corpodafuncao { pilhaDeTabelas.desempilhar(); }
+        |  'for' NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'
+        |  'for' listadenomes 'in' listaexp 'do' bloco 'end'
+        |  'function' nomedafuncao corpodafuncao
+        |  'local' 'function' NOME corpodafuncao
         |  'local' listadenomes ('=' listaexp)?
         ;
 
@@ -60,8 +65,9 @@ listadenomes returns [ List<String> nomes ]
       (',' n2=NOME { $nomes.add($n2.getText()); } )*
     ;
 
-listaexp : (exp ',')* exp
-         ;
+listaexp returns []
+    : (exp ',')* exp
+    ;
 
 exp :  'nil' | 'false' | 'true' | NUMERO | CADEIA | '...' | funcao | 
        expprefixo2 | construtortabela | exp opbin exp | opunaria exp 
@@ -109,14 +115,3 @@ opbin : '+' | '-' | '*' | '/' | '^' | '%' | '..' | '<' |
 
 opunaria : '-' | 'not' | '#'
          ;
-
-
-NOME	:	('a'..'z' | 'A'..'Z' | '_') ('a'..'z' | 'A'..'Z' | '0'..'9' | '_')*;
-CADEIA	:	'\'' ~('\n' | '\r' | '\'')* '\'' | '"' ~('\n' | '\r' | '"')* '"';
-NUMERO	:	('0'..'9')+ EXPOENTE? | ('0'..'9')+ '.' ('0'..'9')* EXPOENTE?
-		| '.' ('0'..'9')+ EXPOENTE?;
-fragment
-EXPOENTE	:	('e' | 'E') ( '+' | '-')? ('0'..'9')+;
-COMENTARIO
-	:	'--' ~('\n' | '\r')* '\r'? '\n' {skip();};
-WS	:	(' ' | '\t' | '\r' | '\n') {skip();};
