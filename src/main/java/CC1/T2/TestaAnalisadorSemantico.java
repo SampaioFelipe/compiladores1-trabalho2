@@ -24,7 +24,7 @@ public class TestaAnalisadorSemantico {
         File[] casosTeste = diretorioCasosTeste.listFiles();
 
         File diretorioSaida = new File(CAMINHO_CASOS_TESTE + "/saida");
-        File[] casosTesteSaida = diretorioCasosTeste.listFiles();
+        File[] casosTesteSaida = diretorioSaida.listFiles();
 
         int min = 1, max = TOTAL_CASOS_TESTE;
         if (CASO_A_SER_TESTADO >= min && CASO_A_SER_TESTADO <= max) {
@@ -37,7 +37,8 @@ public class TestaAnalisadorSemantico {
         for (int i = 0; i < casosTeste.length; i++) {
             Saida.clear();
             String nomeArquivo = casosTeste[i].getName();
-            System.out.println(casosTesteSaida[i].getName());
+            System.out.println("Entrada: "+casosTeste[i].getName());
+            System.out.println("Saida: "+casosTesteSaida[i].getName());
 //            InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
             ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(casosTeste[i]));
             LuazinhaLexer lexer = new LuazinhaLexer(input);
@@ -56,6 +57,8 @@ public class TestaAnalisadorSemantico {
     }
 
     private static void comparar(String nomeArquivo, InputStream saidaCorreta, String saidaObtida) throws Exception {
+//        System.out.println("Obtida--------\n"+saidaObtida);
+//        System.out.println("Correta--------\n"+saidaCorreta);
         InputStreamReader isr = new InputStreamReader(saidaCorreta);
         StringReader sr = new StringReader(saidaObtida);
         boolean diferente = false;

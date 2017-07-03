@@ -13,18 +13,22 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
         visitTrecho(ctx.trecho());
 
         pilhaDeTabelas.desempilhar();
-        return super.visitPrograma(ctx);
+        return null;
     }
 
     @Override
     public String visitTrecho(LuazinhaParser.TrechoContext ctx) {
 
-        if(ctx.comando() != null){
-            for(LuazinhaParser.ComandoContext comando : ctx.comando()){
+        if (ctx.comando() != null) {
+            List<LuazinhaParser.ComandoContext> comandos = ctx.comando();
+            for (LuazinhaParser.ComandoContext comando : comandos) {
                 visitComando(comando);
             }
         }
-        return super.visitTrecho(ctx);
+        if(ctx.ultimocomando() != null){
+            visitUltimocomando(ctx.ultimocomando());
+        }
+        return null;
     }
 
     @Override
@@ -37,15 +41,74 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
 
         if (ctx.listavar() != null) {
             List<String> nomes = ctx.listavar().nomes;
+            visitListaexp(ctx.listaexp());
+
+            for (String var : nomes) {
+                if (!pilhaDeTabelas.existeSimbolo(var)) {
+                    pilhaDeTabelas.topo().adicionarSimbolo(var, "variavel");
+                }
+            }
         } else if (ctx.nomedafuncao() != null) {
 
-            pilhaDeTabelas.empilhar(new TabelaDeSimbolos(ctx.nomedafuncao().nome));
+            String nomeFuncao = ctx.nomedafuncao().nome;
+
+            if (nomeFuncao.contains(":")) {
+                nomeFuncao = nomeFuncao.replace(":", ".");
+
+                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
+
+                pilhaDeTabelas.topo().adicionarSimbolo("self", "parametro");
+            } else {
+                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
+            }
 
             visitCorpodafuncao(ctx.corpodafuncao());
 
             pilhaDeTabelas.desempilhar();
+        } else if (ctx.forNome != null) {
+            pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for"));
+            pilhaDeTabelas.topo().adicionarSimbolo(ctx.forNome.getText(), "variavel");
+            super.visitComando(ctx);
+            pilhaDeTabelas.desempilhar();
+        } else if (ctx.forListadenomes != null) {
+            pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for"));
+
+            visitListaexp(ctx.listaexp());
+
+            for (String nome : ctx.forListadenomes.nomes) {
+                pilhaDeTabelas.topo().adicionarSimbolo(nome, "variavel");
+            }
+
+            visitBloco(ctx.forBloco);
+
+            pilhaDeTabelas.desempilhar();
+        } else if (ctx.localFunction != null) {
+            String nomeFuncao = ctx.localFunction.getText();
+
+            if (nomeFuncao.contains(":")) {
+                nomeFuncao = nomeFuncao.replace(":", ".");
+
+                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
+
+                pilhaDeTabelas.topo().adicionarSimbolo("self", "parametro");
+            } else {
+                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
+            }
+
+            visitCorpodafuncao(ctx.corpodafuncao());
+
+            pilhaDeTabelas.desempilhar();
+        } else if (ctx.localListadenomes != null) {
+            System.out.println("Local aqui");
+            List<String> nomes = ctx.localListadenomes.nomes;
+            visitListaexp(ctx.listaexp());
+            for (String var : nomes) {
+                pilhaDeTabelas.topo().adicionarSimbolo(var, "variavel");
+            }
+        } else {
+            super.visitComando(ctx);
         }
-        return super.visitComando(ctx);
+        return null;
     }
 
     @Override
@@ -90,7 +153,16 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
 
     @Override
     public String visitExpprefixo2(LuazinhaParser.Expprefixo2Context ctx) {
-        return super.visitExpprefixo2(ctx);
+        if (ctx.var() != null) {
+            if (!pilhaDeTabelas.existeSimbolo(ctx.var().nome)) {
+                Mensagens.erroVariavelNaoExiste(ctx.var().linha, ctx.var().coluna, ctx.var().nome);
+            }
+        } else if (ctx.chamadadefuncao() != null) {
+            visitChamadadefuncao(ctx.chamadadefuncao());
+        } else {
+            visitExp(ctx.exp());
+        }
+        return null;
     }
 
     @Override
@@ -119,16 +191,12 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
 
         List<String> nomes = ctx.listadenomes().nomes;
 
-        for (int i = 0; i < nomes.size(); i++) {
-            if(!pilhaDeTabelas.topo().existeSimbolo(nomes.get(i))){
-                pilhaDeTabelas.topo().adicionarSimbolo(nomes.get(i),"parametro");
-            }
-            else {
-                System.out.println("Parametro Duplicado");
+        for (String nome : nomes) {
+            if (!pilhaDeTabelas.topo().existeSimbolo(nome)) {
+                pilhaDeTabelas.topo().adicionarSimbolo(nome, "parametro");
             }
         }
-
-        return super.visitListapar(ctx);
+        return null;
     }
 
     @Override

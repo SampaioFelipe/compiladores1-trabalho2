@@ -29,11 +29,11 @@ comando :  listavar '=' listaexp
         |  'while' exp 'do' bloco 'end'
         |  'repeat' bloco 'until' exp
         |  'if' exp 'then' bloco ('elseif' exp 'then' bloco)* ('else' bloco)? 'end'
-        |  'for' NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'
-        |  'for' listadenomes 'in' listaexp 'do' bloco 'end'
+        |  'for' forNome=NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'
+        |  'for' forListadenomes=listadenomes 'in' listaexp 'do' forBloco=bloco 'end'
         |  'function' nomedafuncao corpodafuncao
-        |  'local' 'function' NOME corpodafuncao
-        |  'local' listadenomes ('=' listaexp)?
+        |  'local' 'function' localFunction=NOME corpodafuncao
+        |  'local' localListadenomes=listadenomes ('=' listaexp)?
         ;
 
 ultimocomando : 'return' (listaexp)? | 'break'
@@ -65,8 +65,7 @@ listadenomes returns [ List<String> nomes ]
       (',' n2=NOME { $nomes.add($n2.getText()); } )*
     ;
 
-listaexp returns []
-    : (exp ',')* exp
+listaexp: (exp ',')* exp
     ;
 
 exp :  'nil' | 'false' | 'true' | NUMERO | CADEIA | '...' | funcao | 
