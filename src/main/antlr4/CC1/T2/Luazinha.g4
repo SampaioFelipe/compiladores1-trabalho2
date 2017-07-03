@@ -17,13 +17,13 @@ WS	:	(' ' | '\t' | '\r' | '\n') -> skip;
 programa : trecho
          ;
 
-trecho : (comando ';'?)* (ultimocomando ';'?)? {System.out.println("entrou trecho");}
+trecho : (comando ';'?)* (ultimocomando ';'?)?
        ;
 
 bloco : trecho
       ;
 
-comando :  listavar '=' listaexp {System.out.println("entrou listvar");}
+comando :  listavar '=' listaexp
         |  chamadadefuncao
         |  'do' bloco 'end'
         |  'while' exp 'do' bloco 'end'

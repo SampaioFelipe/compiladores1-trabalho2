@@ -18,12 +18,11 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
 
     @Override
     public String visitTrecho(LuazinhaParser.TrechoContext ctx) {
-        if(ctx.comando() != null){
-            for(int i = 0; i<ctx.comando().size(); i++){
-                visitComando(ctx.comando().get(i));
-            }
 
-            System.out.println(ctx.comandos.size());
+        if(ctx.comando() != null){
+            for(LuazinhaParser.ComandoContext comando : ctx.comando()){
+                visitComando(comando);
+            }
         }
         return super.visitTrecho(ctx);
     }
@@ -35,7 +34,7 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
 
     @Override
     public String visitComando(LuazinhaParser.ComandoContext ctx) {
-        System.out.println("Comando");
+
         if (ctx.listavar() != null) {
             List<String> nomes = ctx.listavar().nomes;
         } else if (ctx.nomedafuncao() != null) {
