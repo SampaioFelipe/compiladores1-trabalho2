@@ -2,75 +2,78 @@ package CC1.T2;
 
 import java.util.List;
 
-public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
+public class AnalisadorSemantico extends LuazinhaBaseVisitor<Void> {
 
     PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
 
+    /** programa : trecho **/
     @Override
-    public String visitPrograma(LuazinhaParser.ProgramaContext ctx) {
+    public Void visitPrograma(LuazinhaParser.ProgramaContext ctx) {
+        // Criacao do escopo global
         pilhaDeTabelas.empilhar(new TabelaDeSimbolos("global"));
-
+        // Continua a analise no seu filho "trecho"
         visitTrecho(ctx.trecho());
-
+        // Destruicao do escopo global
         pilhaDeTabelas.desempilhar();
         return null;
     }
 
+    /** trecho : (comando ';'?)* (ultimocomando ';'?)? **/
     @Override
-    public String visitTrecho(LuazinhaParser.TrechoContext ctx) {
-
+    public Void visitTrecho(LuazinhaParser.TrechoContext ctx) {
+        // Continua a analise nos comandos que compoem o trecho (caso exista algum)
         if (ctx.comando() != null) {
             List<LuazinhaParser.ComandoContext> comandos = ctx.comando();
             for (LuazinhaParser.ComandoContext comando : comandos) {
                 visitComando(comando);
             }
         }
-        if(ctx.ultimocomando() != null){
+
+        // Apos a analise dos comandos e feita analise do ultimocomando (caso exista)
+        if (ctx.ultimocomando() != null) {
             visitUltimocomando(ctx.ultimocomando());
         }
         return null;
     }
 
+    /** comando pode derivar regras distintas (que estão sendo tratadas no corpo do metodo)**/
     @Override
-    public String visitBloco(LuazinhaParser.BlocoContext ctx) {
-        return super.visitBloco(ctx);
-    }
-
-    @Override
-    public String visitComando(LuazinhaParser.ComandoContext ctx) {
-
+    public Void visitComando(LuazinhaParser.ComandoContext ctx) {
+        // comando :  listavar '=' listaexp
         if (ctx.listavar() != null) {
+            // Adquire todos os nomes de variaveis utilizadas
             List<String> nomes = ctx.listavar().nomes;
-            visitListaexp(ctx.listaexp());
 
+            // faz a analise do lado direito da atribuicao '=' para verificar
+            visitListaexp(ctx.listaexp());
             for (String var : nomes) {
                 if (!pilhaDeTabelas.existeSimbolo(var)) {
                     pilhaDeTabelas.topo().adicionarSimbolo(var, "variavel");
                 }
             }
-        } else if (ctx.nomedafuncao() != null) {
+        }
+        // comando: 'function' nomedafuncao corpodafuncao
+        else if (ctx.nomedafuncao() != null) {
 
-            String nomeFuncao = ctx.nomedafuncao().nome;
+            pilhaDeTabelas.empilhar(new TabelaDeSimbolos(ctx.nomedafuncao().nome));
 
-            if (nomeFuncao.contains(":")) {
-                nomeFuncao = nomeFuncao.replace(":", ".");
-
-                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
-
+            if (ctx.nomedafuncao().metodo) {
                 pilhaDeTabelas.topo().adicionarSimbolo("self", "parametro");
-            } else {
-                pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
             }
 
             visitCorpodafuncao(ctx.corpodafuncao());
 
             pilhaDeTabelas.desempilhar();
-        } else if (ctx.forNome != null) {
+        }
+        // comando: 'for' forNome=NOME '=' exp ',' exp (',' exp)? 'do' bloco 'end'
+        else if (ctx.forNome != null) {
             pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for"));
             pilhaDeTabelas.topo().adicionarSimbolo(ctx.forNome.getText(), "variavel");
             super.visitComando(ctx);
             pilhaDeTabelas.desempilhar();
-        } else if (ctx.forListadenomes != null) {
+        }
+        // comando: 'for' forListadenomes=listadenomes 'in' listaexp 'do' forBloco=bloco 'end'
+        else if (ctx.forListadenomes != null) {
             pilhaDeTabelas.empilhar(new TabelaDeSimbolos("for"));
 
             visitListaexp(ctx.listaexp());
@@ -82,7 +85,9 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
             visitBloco(ctx.forBloco);
 
             pilhaDeTabelas.desempilhar();
-        } else if (ctx.localFunction != null) {
+        }
+        // comando: 'local' 'function' localFunction=NOME corpodafuncao
+        else if (ctx.localFunction != null) {
             String nomeFuncao = ctx.localFunction.getText();
 
             if (nomeFuncao.contains(":")) {
@@ -98,61 +103,24 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
             visitCorpodafuncao(ctx.corpodafuncao());
 
             pilhaDeTabelas.desempilhar();
-        } else if (ctx.localListadenomes != null) {
-            System.out.println("Local aqui");
+        }
+        // comando: 'local' localListadenomes=listadenomes ('=' listaexp)?
+        else if (ctx.localListadenomes != null) {
             List<String> nomes = ctx.localListadenomes.nomes;
             visitListaexp(ctx.listaexp());
             for (String var : nomes) {
                 pilhaDeTabelas.topo().adicionarSimbolo(var, "variavel");
             }
-        } else {
+        }
+        // Realiza a análise nas demais alternativas do camando
+        else {
             super.visitComando(ctx);
         }
         return null;
     }
-
+    /** expprefixo2 : var | chamadadefuncao | '(' exp ')' **/
     @Override
-    public String visitUltimocomando(LuazinhaParser.UltimocomandoContext ctx) {
-        return super.visitUltimocomando(ctx);
-    }
-
-    @Override
-    public String visitNomedafuncao(LuazinhaParser.NomedafuncaoContext ctx) {
-        return super.visitNomedafuncao(ctx);
-    }
-
-    @Override
-    public String visitListavar(LuazinhaParser.ListavarContext ctx) {
-        return super.visitListavar(ctx);
-    }
-
-    @Override
-    public String visitVar(LuazinhaParser.VarContext ctx) {
-        return super.visitVar(ctx);
-    }
-
-    @Override
-    public String visitListadenomes(LuazinhaParser.ListadenomesContext ctx) {
-        return super.visitListadenomes(ctx);
-    }
-
-    @Override
-    public String visitListaexp(LuazinhaParser.ListaexpContext ctx) {
-        return super.visitListaexp(ctx);
-    }
-
-    @Override
-    public String visitExp(LuazinhaParser.ExpContext ctx) {
-        return super.visitExp(ctx);
-    }
-
-    @Override
-    public String visitExpprefixo(LuazinhaParser.ExpprefixoContext ctx) {
-        return super.visitExpprefixo(ctx);
-    }
-
-    @Override
-    public String visitExpprefixo2(LuazinhaParser.Expprefixo2Context ctx) {
+    public Void visitExpprefixo2(LuazinhaParser.Expprefixo2Context ctx) {
         if (ctx.var() != null) {
             if (!pilhaDeTabelas.existeSimbolo(ctx.var().nome)) {
                 Mensagens.erroVariavelNaoExiste(ctx.var().linha, ctx.var().coluna, ctx.var().nome);
@@ -162,32 +130,13 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
         } else {
             visitExp(ctx.exp());
         }
+
         return null;
     }
 
+    /** listapar : listadenomes (',' '...')? | '...' **/
     @Override
-    public String visitChamadadefuncao(LuazinhaParser.ChamadadefuncaoContext ctx) {
-        return super.visitChamadadefuncao(ctx);
-    }
-
-    @Override
-    public String visitArgs(LuazinhaParser.ArgsContext ctx) {
-        return super.visitArgs(ctx);
-    }
-
-    @Override
-    public String visitFuncao(LuazinhaParser.FuncaoContext ctx) {
-        return super.visitFuncao(ctx);
-    }
-
-    @Override
-    public String visitCorpodafuncao(LuazinhaParser.CorpodafuncaoContext ctx) {
-
-        return super.visitCorpodafuncao(ctx);
-    }
-
-    @Override
-    public String visitListapar(LuazinhaParser.ListaparContext ctx) {
+    public Void visitListapar(LuazinhaParser.ListaparContext ctx) {
 
         List<String> nomes = ctx.listadenomes().nomes;
 
@@ -199,33 +148,4 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<String> {
         return null;
     }
 
-    @Override
-    public String visitConstrutortabela(LuazinhaParser.ConstrutortabelaContext ctx) {
-        return super.visitConstrutortabela(ctx);
-    }
-
-    @Override
-    public String visitListadecampos(LuazinhaParser.ListadecamposContext ctx) {
-        return super.visitListadecampos(ctx);
-    }
-
-    @Override
-    public String visitCampo(LuazinhaParser.CampoContext ctx) {
-        return super.visitCampo(ctx);
-    }
-
-    @Override
-    public String visitSeparadordecampos(LuazinhaParser.SeparadordecamposContext ctx) {
-        return super.visitSeparadordecampos(ctx);
-    }
-
-    @Override
-    public String visitOpbin(LuazinhaParser.OpbinContext ctx) {
-        return super.visitOpbin(ctx);
-    }
-
-    @Override
-    public String visitOpunaria(LuazinhaParser.OpunariaContext ctx) {
-        return super.visitOpunaria(ctx);
-    }
 }

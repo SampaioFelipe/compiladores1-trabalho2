@@ -37,9 +37,7 @@ public class TestaAnalisadorSemantico {
         for (int i = 0; i < casosTeste.length; i++) {
             Saida.clear();
             String nomeArquivo = casosTeste[i].getName();
-            System.out.println("Entrada: "+casosTeste[i].getName());
-            System.out.println("Saida: "+casosTesteSaida[i].getName());
-//            InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
+            //InputStream casoDeTesteEntrada = TestaAnalisadorSemantico.class.getResourceAsStream("casosDeTeste/entrada/" + nomeArquivo);
             ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(casosTeste[i]));
             LuazinhaLexer lexer = new LuazinhaLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -47,9 +45,7 @@ public class TestaAnalisadorSemantico {
 
             LuazinhaParser.ProgramaContext arvore = parser.programa();
             AnalisadorSemantico analisadorSemantico = new AnalisadorSemantico();
-            String result = analisadorSemantico.visitPrograma(arvore);
-
-            System.out.println(result);
+            analisadorSemantico.visitPrograma(arvore);
 
             InputStream casoDeTesteSaida = new FileInputStream(casosTesteSaida[i]);
             comparar(nomeArquivo, casoDeTesteSaida, Saida.getTexto());
