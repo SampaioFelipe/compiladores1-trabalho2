@@ -117,58 +117,73 @@ public class AnalisadorSemantico extends LuazinhaBaseVisitor<Void> {
             //pega o nome da função do contexto e atribui a nomeFuncao
             String nomeFuncao = ctx.localFunction.getText();
 
+            //verifica se há dois pontos no nome da função, o que a caracteriza como método
             if (nomeFuncao.contains(":")) {
                 nomeFuncao = nomeFuncao.replace(":", ".");
 
+                //Empilha nova tabela com o nome da função
                 pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
-
+                //Empilha "self", que se refere ao próprio método
                 pilhaDeTabelas.topo().adicionarSimbolo("self", "parametro");
             } else {
+                //senão não é método e não precisa se "self"
                 pilhaDeTabelas.empilhar(new TabelaDeSimbolos(nomeFuncao));
             }
 
+            //analisa corpo da função
             visitCorpodafuncao(ctx.corpodafuncao());
 
             pilhaDeTabelas.desempilhar();
         }
+
         //Se a regra for comando: 'local' localListadenomes=listadenomes ('=' listaexp)?
         else if (ctx.localListadenomes != null) {
             List<String> nomes = ctx.localListadenomes.nomes;
+
+            //Analisa lista de expressões
             visitListaexp(ctx.listaexp());
+            //Insere variável nome por nome na tabela de símbolos correntes
             for (String var : nomes) {
                 pilhaDeTabelas.topo().adicionarSimbolo(var, "variavel");
             }
         }
-        // Realiza a análise nas demais alternativas do camando
+        // Realiza a análise nas demais alternativas do comando
         else {
             super.visitComando(ctx);
         }
         return null;
     }
+
     /*Visitor da regra expprefixo2*/
     /** expprefixo2 : var | chamadadefuncao | '(' exp ')' **/
     @Override
     public Void visitExpprefixo2(LuazinhaParser.Expprefixo2Context ctx) {
         if (ctx.var() != null) {
+          //Se não existe a variável na tabela de símbolos do topo da pilha
             if (!pilhaDeTabelas.existeSimbolo(ctx.var().nome)) {
+              //erro
                 Mensagens.erroVariavelNaoExiste(ctx.var().linha, ctx.var().coluna, ctx.var().nome);
             }
+            //se for chamada de função
         } else if (ctx.chamadadefuncao() != null) {
+          //trata chamada de função
             visitChamadadefuncao(ctx.chamadadefuncao());
         } else {
+          //analisa expressão
             visitExp(ctx.exp());
         }
-
         return null;
-    }
+      }
 
     /*Visitor da regra listapar*/
     /** listapar : listadenomes (',' '...')? | '...' **/
     @Override
     public Void visitListapar(LuazinhaParser.ListaparContext ctx) {
-
+      //coloca o nome dos parâmetros na lista nomes
         List<String> nomes = ctx.listadenomes().nomes;
 
+        /*laço que percorre a lista "nomes" item por item e se este não existir
+         *o símbolo é adicionado com seu nome e tipo "parâmetro"*/
         for (String nome : nomes) {
             if (!pilhaDeTabelas.topo().existeSimbolo(nome)) {
                 pilhaDeTabelas.topo().adicionarSimbolo(nome, "parametro");
